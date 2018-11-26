@@ -1,5 +1,7 @@
 public class SplayNode<T> {
-    SplayNode left, right, parent;
+    SplayNode<T> left;
+    SplayNode<T> right;
+    SplayNode<T>parent;
     final T value;
 
     public SplayNode(T value) {

@@ -16,13 +16,13 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     }
 
     private void rotate(SplayNode<T> parent, SplayNode<T> child) {
-        SplayNode grandParent = parent.parent;
+        SplayNode<T> grandParent = parent.parent;
         if (grandParent != null) {
             if (grandParent.left == parent)
                 grandParent.left = child;
             else grandParent.right = child;
         }
-        if (grandParent.left == child) {
+        if (parent.left == child) {
             parent.left = child.right;
             child.right = parent;
         } else {
@@ -34,7 +34,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         child.parent = grandParent;
     }
 
-    private SplayNode splay(SplayNode<T> n) {
+    private SplayNode<T> splay(SplayNode<T> n) {
         if (n.parent == null)
             return n;
         SplayNode<T> p = n.parent;
@@ -43,7 +43,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             rotate(p, n);
             return n;
         } else {
-            if ((p.left == n) == (gp.left == p)) {
+            if ((gp.left == p) == (p.left == n)) {
                 rotate(gp, p);
                 rotate(p, n);
             } else {
@@ -77,14 +77,11 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         int e = v.compareTo(start.value);
         if (e == 0)
             return splay(start);
-        else if (e < 0){
-            if (start.left == null) return splay(start);
+        else if (e < 0 && start.left != null)
             return findClosest(start.left, v);
-        }
-        else {
-            if (start.right == null) return splay(start);
+        else if (e > 0 && start.right != null)
             return findClosest(start.right, v);
-        }
+        return splay(start);
     }
 
     private void split(SplayNode<T> r, T v) {
@@ -104,7 +101,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             left = r.left;
             r.left = null;
             setParent(left, null);
-            right = root;
+            right = r;
         }
     }
 
@@ -121,7 +118,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public Comparator<? super T> comparator() {
-        return comparator();
+        return null;
     }
 
     @Override
@@ -195,7 +192,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public int size() {
-        return this.count;
+        return count;
     }
 
     @Override
@@ -224,21 +221,23 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     public class SplayTreeIterator implements Iterator<T> {
 
         private SplayNode<T> current = null;
-        private int location = 0;
+        private int location;
         private List<SplayNode<T>> list;
 
         SplayTreeIterator() {
             list = new ArrayList<>();
-            addToList(root);
+            if (root != null)
+                addToList(root);
+            location = 0;
         }
 
         private void addToList(SplayNode<T> node) {
-            if (node != null) {
-                addToList(node.left);
-                list.add(node);
+            if (node.right != null)
                 addToList(node.right);
+            list.add(node);
+            if (node.left != null)
+                addToList(node.left);
             }
-        }
 
         private SplayNode<T> findNext() {
             return list.get(location++);
