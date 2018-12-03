@@ -1,119 +1,78 @@
 import java.util.*;
 
-public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
-    private SplayNode<T> root, left, right;
-    private int count;
+class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
+    private SplayNode<T> root;
+    private int count = 0;
 
-    private void setParent(SplayNode<T> child, SplayNode<T> parent) {
-        if (child != null) {
-            child.parent = parent;
-        }
+    SplayTree() {
+        root = null;
     }
 
-    private void keepParent(SplayNode<T> t) {
-        setParent(t.left, t);
-        setParent(t.right, t);
+    public void makeRightChildParent(SplayNode<T> c, SplayNode<T> p) {
+        if ((c == null) || (p == null) || (p.right != c) || (c.parent != p))
+            throw new RuntimeException("WRONG");
+        if (p.parent != null) {
+            if (p == p.parent.left)
+                p.parent.left = c;
+            else
+                p.parent.right = c;
+        }
+        if (c.left != null)
+            c.left.parent = p;
+        c.parent = p.parent;
+        p.parent = c;
+        p.right = c.left;
+        c.left = p;
     }
 
-    private void rotate(SplayNode<T> parent, SplayNode<T> child) {
-        SplayNode<T> grandParent = parent.parent;
-        if (grandParent != null) {
-            if (grandParent.left == parent)
-                grandParent.left = child;
-            else grandParent.right = child;
+    public void makeLeftChildParent(SplayNode<T> c, SplayNode<T> p) {
+        if ((c == null) || (p == null) || (p.left != c) || (c.parent != p))
+            throw new RuntimeException("WRONG");
+
+        if (p.parent != null) {
+            if (p == p.parent.left)
+                p.parent.left = c;
+            else
+                p.parent.right = c;
         }
-        if (parent.left == child) {
-            parent.left = child.right;
-            child.right = parent;
-        } else {
-            parent.right = child.left;
-            child.left = parent;
-        }
-        keepParent(child);
-        keepParent(parent);
-        child.parent = grandParent;
+        if (c.right != null)
+            c.right.parent = p;
+        c.parent = p.parent;
+        p.parent = c;
+        p.left = c.right;
+        c.right = p;
     }
 
-    private SplayNode<T> splay(SplayNode<T> n) {
-        if (n.parent == null)
-            return n;
-        SplayNode<T> p = n.parent;
-        SplayNode<T> gp = p.parent;
-        if (gp == null) {
-            rotate(p, n);
-            return n;
-        } else {
-            if ((gp.left == p) == (p.left == n)) {
-                rotate(gp, p);
-                rotate(p, n);
+    public void Splay(SplayNode<T> x) {
+        while (x.parent != null) {
+            SplayNode<T> Parent = x.parent;
+            SplayNode<T> GrandParent = Parent.parent;
+            if (GrandParent == null) {
+                if (x == Parent.left)
+                    makeLeftChildParent(x, Parent);
+                else
+                    makeRightChildParent(x, Parent);
             } else {
-                rotate(p, n);
-                rotate(gp, n);
+                if (x == Parent.left) {
+                    if (Parent == GrandParent.left) {
+                        makeLeftChildParent(Parent, GrandParent);
+                        makeLeftChildParent(x, Parent);
+                    } else {
+                        makeLeftChildParent(x, x.parent);
+                        makeRightChildParent(x, x.parent);
+                    }
+                } else {
+                    if (Parent == GrandParent.left) {
+                        makeRightChildParent(x, x.parent);
+                        makeLeftChildParent(x, x.parent);
+                    } else {
+                        makeRightChildParent(Parent, GrandParent);
+                        makeRightChildParent(x, Parent);
+                    }
+                }
             }
         }
-        return splay(n);
-    }
-
-    private SplayNode<T> search(T value) {
-        if (root == null) return null;
-        return search(root, value);
-    }
-
-    private SplayNode<T> search(SplayNode<T> n, T v) {
-        if (n == null)
-            return null;
-        int e = v.compareTo(n.value);
-        if (e == 0)
-            return splay(n);
-        else if (e < 0)
-            return search(n.left, v);
-        else return search(n.right, v);
-    }
-
-    private SplayNode<T> findClosest(SplayNode<T> start, T v) {
-        if (start == null) {
-            return null;
-        }
-        int e = v.compareTo(start.value);
-        if (e == 0)
-            return splay(start);
-        else if (e < 0 && start.left != null)
-            return findClosest(start.left, v);
-        else if (e > 0 && start.right != null)
-            return findClosest(start.right, v);
-        return splay(start);
-    }
-
-    private void split(SplayNode<T> r, T v) {
-        if (r == null) {
-            left = null;
-            right = null;
-            return;
-        }
-        r = findClosest(r, v);
-        int e = v.compareTo(r.value);
-        if (e > 0) {
-            right = r.right;
-            r.right = null;
-            setParent(right, null);
-            left = r;
-        } else {
-            left = r.left;
-            r.left = null;
-            setParent(left, null);
-            right = r;
-        }
-    }
-
-    private SplayNode<T> merge(SplayNode<T> left, SplayNode<T> right) {
-        if (right == null)
-            return left;
-        if (left == null)
-            return right;
-        right = findClosest(right, left.value);
-        right.left = left;
-        left.parent = right;
-        return right;
+        root = x;
     }
 
     @Override
@@ -167,27 +126,21 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     @Override
     public T first() {
         if (root == null) throw new NoSuchElementException();
-        SplayNode<T> temp = root;
-        SplayNode<T> min = findMin(temp);
-        return min.value;
-    }
-
-    private SplayNode<T> findMin(SplayNode<T> node) {
-        if (node.left == null) return node;
-        else return findMin(node.left);
+        SplayNode<T> current = root;
+        while (current.left != null) {
+            current = current.left;
+        }
+        return current.value;
     }
 
     @Override
     public T last() {
         if (root == null) throw new NoSuchElementException();
-        SplayNode<T> temp = root;
-        SplayNode<T> max = findMax(temp);
-        return max.value;
-    }
-
-    private SplayNode<T> findMax(SplayNode<T> node) {
-        if (node.right == null) return node;
-        else return findMax(node.right);
+        SplayNode<T> current = root;
+        while (current.right != null) {
+            current = current.right;
+        }
+        return current.value;
     }
 
     @Override
@@ -202,20 +155,168 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public boolean contains(Object o) {
-        if (root == null || o.getClass() != root.value.getClass())
-            return false;
-        SplayNode n = search((T) o);
-        if (n == null)
-            return false;
-        else {
-            root = n;
-            return true;
+        return findNode((T) o) != null;
+    }
+
+    private SplayNode<T> findNode(T element) {
+        SplayNode<T> prevNode = null;
+        SplayNode<T> z = root;
+        while (z != null) {
+            prevNode = z;
+            if (element.compareTo(z.value) > 0)
+                z = z.right;
+            else if (element.compareTo(z.value) < 0)
+                z = z.left;
+            else {
+                Splay(z);
+                return z;
+            }
         }
+        if (prevNode != null) {
+            Splay(prevNode);
+            return null;
+        }
+        return null;
     }
 
     @Override
     public Iterator<T> iterator() {
         return new SplayTreeIterator();
+    }
+
+    @Override
+    public Object[] toArray() {
+        Iterator iteratorIt = new SplayTreeIterator();
+        Object[] a = new Object[count];
+        int i = 0;
+        while (iteratorIt .hasNext()) {
+            a[i] = iteratorIt.next();
+            i++;
+        }
+        return a;
+    }
+
+    @Override
+    public <T> T[] toArray(T[] a) {
+        Object[] elementData = toArray();
+        if (a.length < count) {
+            return (T[]) Arrays.copyOf(elementData, count, a.getClass());
+        }
+        System.arraycopy(elementData, 0, a, 0, count);
+        if (a.length > count) {
+            a[count] = null;
+        }
+        return a;
+    }
+
+    @Override
+    public boolean add(T t) {
+        SplayNode<T> z = root;
+        SplayNode<T> p = null;
+        while (z != null) {
+            p = z;
+            if (t.compareTo(p.value) > 0)
+                z = z.right;
+            else
+                z = z.left;
+        }
+        z = new SplayNode<>();
+        z.value = t;
+        z.parent = p;
+        if (p == null)
+            root = z;
+        else if (t.compareTo(p.value) > 0)
+            p.right = z;
+        else
+            p.left = z;
+        Splay(z);
+        count++;
+        return true;
+    }
+
+    @Override
+    public boolean remove(Object o) {
+        if (!contains(o)) return false;
+        SplayNode node = findNode((T) o);
+        remove(node);
+        return true;
+    }
+
+    private void remove(SplayNode node) {
+        if (node == null)
+            return;
+        Splay(node);
+        if ((node.left != null) && (node.right != null)) {
+            SplayNode min = node.left;
+            while (min.right != null)
+                min = min.right;
+
+            min.right = node.right;
+            node.right.parent = min;
+            node.left.parent = null;
+            root = node.left;
+        } else if (node.right != null) {
+            node.right.parent = null;
+            root = node.right;
+        } else if (node.left != null) {
+            node.left.parent = null;
+            root = node.left;
+        } else {
+            root = null;
+        }
+        node.parent = null;
+        node.left = null;
+        node.right = null;
+        count--;
+    }
+
+    @Override
+    public boolean containsAll(Collection<?> c) {
+        for (Object o : c) {
+            if (!contains(o))
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+        boolean check = false;
+        for (T value : c) {
+            if (this.add(value)) check = true;
+        }
+        return check;
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        boolean check = false;
+        Iterator<T> iteratorIt = this.iterator();
+        while (iteratorIt.hasNext()) {
+            if (!c.contains(iteratorIt.next())) {
+                iteratorIt.remove();
+                check = true;
+            }
+        }
+        return check;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        boolean check = false;
+        for (Object o : c){
+            if (this.contains(o)){
+                this.remove(o);
+                check = true;
+            }
+        }
+        return check;
+    }
+
+    @Override
+    public void clear() {
+        root = null;
+        count = 0;
     }
 
     public class SplayTreeIterator implements Iterator<T> {
@@ -237,7 +338,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             list.add(node);
             if (node.left != null)
                 addToList(node.left);
-            }
+        }
 
         private SplayNode<T> findNext() {
             return list.get(location++);
@@ -261,214 +362,5 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             list.remove(location - 1);
             location--;
         }
-    }
-
-    @Override
-    public Object[] toArray() {
-        Iterator iteratorIt = new SplayTreeIterator();
-        Object[] arr = new Object[count];
-        int index = 0;
-        while (iteratorIt.hasNext()) {
-            arr[index] = iteratorIt.next();
-            index++;
-        }
-        return arr;
-    }
-
-    @Override
-    public <T> T[] toArray(T[] a) {
-        Object[] e = toArray();
-        if (a.length < count)
-            return (T[]) Arrays.copyOf(e, count, a.getClass());
-        System.arraycopy(e, 0, a, 0, count);
-        if (a.length > count)
-            a[count] = null;
-        return a;
-    }
-
-    @Override
-    public boolean add(T t) {
-        if (contains(t)) return false;
-        root = insert(t);
-        count++;
-        return true;
-    }
-
-    private SplayNode<T> insert(T value) {
-        split(root, value);
-        root = new SplayNode(value);
-        root.left = left;
-        root.right = right;
-        keepParent(root);
-        return root;
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        if(!contains(o)) return false;
-        SplayNode<T> node = remove(root, (T) o);
-        if (node == null) {
-            if (root == null) {
-                count--;
-                return true;
-            }
-            return false;
-        }
-        root = node;
-        count--;
-        return true;
-    }
-
-    private SplayNode<T> remove(SplayNode<T> node, T v) {
-        node = search(node, v);
-        if (node == null) return null;
-        setParent(node.left, null);
-        setParent(node.right, null);
-        SplayNode temp = merge(node.left, node.right);
-        if (temp == null) {
-            root = null;
-            return null;
-        } else return temp;
-    }
-
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        Iterator iteratorIt = c.iterator();
-        Object o;
-        if (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (root == null || o.getClass() != root.value.getClass()) {
-                return false;
-            }
-        } else return false;
-        if (!contains(o)) return false;
-        while (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (!contains(o))
-                return false;
-        }
-        return true;
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends T> c) {
-        Iterator iteratorIt = c.iterator();
-        Object o;
-        if (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (root == null || o.getClass() != root.value.getClass())
-                return false;
-        } else return false;
-        boolean f = false;
-        if (add((T) o))
-            f = true;
-        while (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (add((T) o))
-                f = true;
-        }
-        return f;
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        Iterator iteratorIt = c.iterator();
-        Object o;
-        if (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (root == null || o.getClass() != root.value.getClass())
-                return false;
-        } else return false;
-        boolean f = false;
-        SplayTree<T> newTree = new SplayTree<>();
-        if (contains(o)) {
-            newTree.add((T) o);
-            f = true;
-        }
-        while (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (contains(o))
-                newTree.add((T) o);
-            else f = true;
-        }
-        root = newTree.root;
-        count = newTree.size();
-        return f;
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> c) {
-        Iterator iteratorIt = c.iterator();
-        Object o;
-        if (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (root == null || o.getClass() != root.value.getClass())
-                return false;
-        } else return false;
-        boolean f = false;
-        if (remove(o))
-            f = true;
-        while (iteratorIt.hasNext()) {
-            o = iteratorIt.next();
-            if (remove(o))
-                f = true;
-        }
-        return f;
-    }
-
-    @Override
-    public void clear() {
-        root = null;
-        count = 0;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + count;
-        result = prime * result + ((left == null) ? 0 : left.hashCode());
-        result = prime * result + ((right == null) ? 0 : right.hashCode());
-        result = prime * result + ((root == null) ? 0 : root.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof SplayTree)) {
-            return false;
-        }
-        SplayTree other = (SplayTree) obj;
-        if (count != other.count) {
-            return false;
-        }
-        if (left == null) {
-            if (other.left != null) {
-                return false;
-            }
-        } else if (!left.equals(other.left)) {
-            return false;
-        }
-        if (right == null) {
-            if (other.right != null) {
-                return false;
-            }
-        } else if (!right.equals(other.right)) {
-            return false;
-        }
-        if (root == null) {
-            if (other.root != null) {
-                return false;
-            }
-        } else if (!root.equals(other.root)) {
-            return false;
-        }
-        return true;
     }
 }
