@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="api">
+    <CLASSES />
+    <JAVADOC>
+      <root url="jar://D:/nam 2/jgraphx-master.zip!/jgraphx-master/docs/api" />
+      <root url="https://github.com/jgraph/jgraphx.git" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://D:/nam 2/jgraphx-master.zip!/jgraphx-master/examples" />
+      <root url="jar://D:/nam 2/jgraphx-master.zip!/jgraphx-master/src" />
+    </SOURCES>
+  </library>
+</component>

@@ -8,7 +8,7 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         root = null;
     }
 
-    public void makeRightChildParent(SplayNode<T> c, SplayNode<T> p) {
+    private void makeRightChildParent(SplayNode<T> c, SplayNode<T> p) {
         if ((c == null) || (p == null) || (p.right != c) || (c.parent != p))
             throw new RuntimeException("WRONG");
         if (p.parent != null) {
@@ -25,7 +25,7 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         c.left = p;
     }
 
-    public void makeLeftChildParent(SplayNode<T> c, SplayNode<T> p) {
+    private void makeLeftChildParent(SplayNode<T> c, SplayNode<T> p) {
         if ((c == null) || (p == null) || (p.left != c) || (c.parent != p))
             throw new RuntimeException("WRONG");
 
@@ -43,7 +43,7 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         c.right = p;
     }
 
-    public void Splay(SplayNode<T> x) {
+    private void Splay(SplayNode<T> x) {
         while (x.parent != null) {
             SplayNode<T> Parent = x.parent;
             SplayNode<T> GrandParent = Parent.parent;
@@ -236,8 +236,8 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public boolean remove(Object o) {
-        if (!contains(o)) return false;
         SplayNode node = findNode((T) o);
+        if (node == null) return false;
         remove(node);
         return true;
     }
@@ -364,3 +364,4 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         }
     }
 }
+abstract class SplaySubSet<T extends Comparable<T>> implements SortedSet<T> {}
