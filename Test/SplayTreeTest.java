@@ -56,26 +56,35 @@ public class SplayTreeTest {
     void subSet() {
         add();
         System.out.println("Subset test");
-        Set<Integer> test1 = new TreeSet<>(Arrays.asList(30, 40));
-        Set<Integer> test2 = new TreeSet<>(Arrays.asList(10, 20, 30, 40, 50, 60));
-        assertArrayEquals(test1.toArray(), tree.subSet(25, 45).toArray());
-        assertArrayEquals(test2.toArray(), tree.subSet(10, 65).toArray());
+        SortedSet<Integer> set = tree.subSet(10, 50);
+        assertTrue(set.contains(10));
+        assertTrue(set.contains(20));
+        assertTrue(set.contains(30));
+        assertTrue(set.contains(40));
+        assertFalse(set.contains(50));
     }
 
     @Test
     void headSet() {
         add();
         System.out.println("headSet test");
-        Set<Integer> test = new TreeSet<>(Arrays.asList(10, 20, 30));
-        assertArrayEquals(test.toArray(), tree.headSet(32).toArray());
+        SortedSet<Integer> set = tree.headSet(40);
+        assertTrue(set.contains(30));
+        assertTrue(set.contains(10));
+        assertTrue(set.contains(20));
+        assertFalse(set.contains(40));
     }
 
     @Test
     void tailSet() {
         add();
         System.out.println("TailSet test");
-        Set<Integer> test = new TreeSet<>(Arrays.asList(40, 50, 60 ,70, 80, 90));
-        assertArrayEquals(test.toArray(), tree.tailSet(38).toArray());
+        SortedSet<Integer> set = tree.tailSet(50);
+        assertTrue(set.contains(50));
+        assertTrue(set.contains(60));
+        assertTrue(set.contains(70));
+        assertTrue(set.contains(80));
+        assertTrue(set.contains(90));
     }
 
     @Test

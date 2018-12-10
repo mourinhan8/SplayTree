@@ -1,6 +1,9 @@
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
+
 import java.util.*;
 
-class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
+public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     private SplayNode<T> root;
     private int count = 0;
 
@@ -12,9 +15,10 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         return root;
     }
 
+    /**
+     * rotate
+     **/
     private void makeRightChildParent(SplayNode<T> c, SplayNode<T> p) {
-        /*if ((c == null) || (p == null) || (p.right != c) || (c.parent != p))
-            throw new RuntimeException("WRONG");*/
         if (p.parent != null) {
             if (p == p.parent.left)
                 p.parent.left = c;
@@ -29,9 +33,10 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         c.left = p;
     }
 
+    /**
+     * rotate
+     **/
     private void makeLeftChildParent(SplayNode<T> c, SplayNode<T> p) {
-        /*if ((c == null) || (p == null) || (p.left != c) || (c.parent != p))
-            throw new RuntimeException("WRONG");*/
         if (p.parent != null) {
             if (p == p.parent.left)
                 p.parent.left = c;
@@ -46,6 +51,9 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         c.right = p;
     }
 
+    /**
+     * function splay
+     **/
     private void Splay(SplayNode<T> x) {
         while (x.parent != null) {
             SplayNode<T> Parent = x.parent;
@@ -113,45 +121,17 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public SortedSet<T> subSet(T fromElement, T toElement) {
-        if (fromElement == null || toElement == null) throw new IllegalArgumentException();
-        if (fromElement.compareTo(toElement) > 0) throw new IllegalArgumentException();
-        return subSet(fromElement, toElement, false);
-    }
-
-    private SortedSet<T> subSet(T fromElement, T toElement, boolean i) {
-        SortedSet<T> set = new TreeSet<>();
-        subSet(root, set, fromElement, toElement, i);
-        return set;
-    }
-
-    private void subSet(SplayNode<T> c, SortedSet<T> set, T fromElement, T toElement, boolean i) {
-        if (c == null)
-            return;
-        int cf = c.value.compareTo(fromElement);
-        int ct = c.value.compareTo(toElement);
-        if (cf > 0)
-            subSet(c.left, set, fromElement, toElement, i);
-        if (i) {
-            if (cf >= 0 && ct <= 0)
-                set.add(c.value);
-        } else {
-            if (cf >= 0 && ct < 0)
-                set.add(c.value);
-        }
-        if (ct < 0)
-            subSet(c.right, set, fromElement, toElement, i);
+        return new SplaySubSet<>(this, toElement, fromElement, false, false);
     }
 
     @Override
     public SortedSet<T> headSet(T toElement) {
-        if (first().compareTo(toElement) > 0) throw new IllegalArgumentException();
-        return subSet(first(), toElement, true);
+        return new SplaySubSet<>(this, toElement, null, true, false);
     }
 
     @Override
     public SortedSet<T> tailSet(T fromElement) {
-        if (last().compareTo(fromElement) < 0) throw new IllegalArgumentException();
-        return subSet(fromElement, last(), true);
+        return new SplaySubSet<>(this, null, fromElement, false, true);
     }
 
     @Override
@@ -334,48 +314,180 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     public class SplayTreeIterator implements Iterator<T> {
 
         private SplayNode<T> current = null;
-        private int location;
-        private List<SplayNode<T>> list;
+        private Stack<SplayNode<T>> stack;
+        private SplayNode<T> previous = null;
 
         SplayTreeIterator() {
-            list = new ArrayList<>();
-            if (root != null)
-                addToList(root);
-            location = 0;
+            stack = new Stack<>();
+            pushAll(root);
         }
 
-        private void addToList(SplayNode<T> node) {
-            if (node.right != null)
-                addToList(node.right);
-            list.add(node);
-            if (node.left != null)
-                addToList(node.left);
+        private void pushAll(SplayNode<T> node) {
+            if (node != null) {
+                stack.push(node);
+                if (node.right != null)
+                    pushAll(node.right);
+            }
         }
 
         private SplayNode<T> findNext() {
-            return list.get(location++);
+            SplayNode<T> temp = stack.pop();
+            if (temp.left != null) {
+                pushAll(temp.left);
+            }
+            return temp;
         }
 
         @Override
         public boolean hasNext() {
-            return location < list.size();
+            return !stack.empty();
         }
 
         @Override
         public T next() {
+            previous = current;
             current = findNext();
-            if (current == null) throw new NoSuchElementException();
             return current.value;
         }
 
         @Override
         public void remove() {
-            SplayTree.this.remove(list.get(location - 1).value);
-            list.remove(location - 1);
-            location--;
+            if (current.left == null) previous = null;
+            Splay(current);
+            if ((current.left != null) && (current.right != null)) {
+                root = current.left;
+                Splay(previous);
+                root.right = current.right;
+            } else if (current.right != null) {
+                current.right.parent = null;
+                root = current.right;
+            } else if (current.left != null) {
+                current.left.parent = null;
+                root = current.left;
+            } else {
+                root = null;
+            }
+            current.parent = null;
+            current.left = null;
+            current.right = null;
+            count--;
         }
     }
-}
 
-abstract class SplaySubSet<T extends Comparable<T>> implements SortedSet<T> {
+    @Override
+    public boolean equals(Object object) {
+        if (object == this) return true;
+        if (object instanceof Set) {
+            Set<?> o = (SplayTree<?>) object;
+            return o.size() == this.size() && this.containsAll(o) && o.containsAll(this);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int prime = 0;
+        for (T i : this) {
+            prime += i.hashCode();
+        }
+        return prime;
+    }
+
+    public class SplaySubSet<T extends Comparable<T>> extends AbstractSet<T> implements SortedSet<T> {
+        T upperBound;
+        T lowerBound;
+        boolean toLast;
+        boolean fromFirst;
+        SplayTree<T> tree;
+
+        SplaySubSet(SplayTree tree, T upBoarder, T lowBoarder, boolean fromFirst, boolean toLast) {
+            this.upperBound = upBoarder;
+            this.lowerBound = lowBoarder;
+            this.fromFirst = fromFirst;
+            this.toLast = toLast;
+            this.tree = tree;
+        }
+
+        public boolean inRange(Object o) {
+            T t = (T) o;
+            if (lowerBound != null && upperBound != null) {
+                return t.compareTo(lowerBound) >= 0 && t.compareTo(upperBound) < 0;
+            } else if (lowerBound == null) {
+                return t.compareTo(upperBound) < 0;
+            } else return t.compareTo(lowerBound) >= 0;
+        }
+
+        @Override
+        public boolean add(T t) {
+            if (inRange(t)) {
+                tree.add(t);
+                return true;
+            } else return false;
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            if (inRange(o)) {
+                tree.remove(o);
+                return true;
+            } else return false;
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            if (inRange(o)) {
+                return tree.contains(o);
+            }
+            return false;
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return null;
+        }
+
+        @Override
+        public int size() {
+            int size = 0;
+            for (T aTree : tree) {
+                if (inRange(aTree))
+                    size++;
+            }
+            return size;
+        }
+
+        @Nullable
+        @Override
+        public Comparator<? super T> comparator() {
+            return null;
+        }
+
+        @NotNull
+        @Override
+        public SortedSet<T> subSet(T fromElement, T toElement) {
+            return null;
+        }
+
+        @NotNull
+        @Override
+        public SortedSet<T> headSet(T toElement) {
+            return null;
+        }
+
+        @NotNull
+        @Override
+        public SortedSet<T> tailSet(T fromElement) {
+            return null;
+        }
+
+        @Override
+        public T first() {
+            return null;
+        }
+
+        @Override
+        public T last() {
+            return null;
+        }
+    }
 }
