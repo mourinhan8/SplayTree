@@ -54,7 +54,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     /**
      * function splay
      **/
-    private void Splay(SplayNode<T> x) {
+    private void splay(SplayNode<T> x) {
         while (x.parent != null) {
             SplayNode<T> Parent = x.parent;
             SplayNode<T> GrandParent = Parent.parent;
@@ -167,7 +167,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     @Override
     public boolean contains(Object o) {
         SplayNode<T> node = findClosest(this.root, (T) o);
-        Splay(node);
+        splay(node);
         return node.value.compareTo((T) o) == 0;
     }
 
@@ -222,7 +222,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             p.right = z;
         else
             p.left = z;
-        Splay(z);
+        splay(z);
         count++;
         return true;
     }
@@ -238,14 +238,16 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     private void remove(SplayNode node) {
         if (node == null)
             return;
-        Splay(node);
+        splay(node);
         if ((node.left != null) && (node.right != null)) {
             SplayNode min = node.left;
             while (min.right != null)
                 min = min.right;
+            min.right = node.right;
+            node.right.parent = min;
+            node.left.parent = null;
             root = node.left;
-            Splay(min);
-            root.right = node.right;
+            splay(min);
         } else if (node.right != null) {
             node.right.parent = null;
             root = node.right;
@@ -260,7 +262,6 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         node.right = null;
         count--;
     }
-
 
     @Override
     public boolean containsAll(Collection<?> c) {
@@ -353,11 +354,12 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         @Override
         public void remove() {
             if (current.left == null) previous = null;
-            Splay(current);
+            splay(current);
             if ((current.left != null) && (current.right != null)) {
+                previous.right = current.right;
+                current.right.parent = previous;
+                current.left.parent = null;
                 root = current.left;
-                Splay(previous);
-                root.right = current.right;
             } else if (current.right != null) {
                 current.right.parent = null;
                 root = current.right;
@@ -408,7 +410,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             this.tree = tree;
         }
 
-        public boolean inRange(Object o) {
+        boolean inRange(Object o) {
             T t = (T) o;
             if (lowerBound != null && upperBound != null) {
                 return t.compareTo(lowerBound) >= 0 && t.compareTo(upperBound) < 0;
@@ -465,29 +467,56 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         @NotNull
         @Override
         public SortedSet<T> subSet(T fromElement, T toElement) {
-            return null;
+            if (fromElement.compareTo(toElement) > 0) throw new NoSuchElementException();
+            return new SplaySubSet<>(tree, fromElement, toElement, false, false);
         }
 
         @NotNull
         @Override
         public SortedSet<T> headSet(T toElement) {
-            return null;
+            return new SplaySubSet<>(tree, lowerBound, toElement, fromFirst, false);
         }
 
         @NotNull
         @Override
         public SortedSet<T> tailSet(T fromElement) {
-            return null;
+            return new SplaySubSet<>(tree, fromElement, upperBound, false, toLast);
         }
 
         @Override
         public T first() {
-            return null;
+            if (this.size() == 0) throw new NoSuchElementException();
+            if (lowerBound == null) return tree.first();
+            else if (toLast) return lowerBound;
+            else {
+                Iterator<T> it = tree.iterator();
+                T temp = null;
+                while (it.hasNext()) {
+                    temp = it.next();
+                    if (temp.compareTo(lowerBound) == 0) {
+                        temp = it.next();
+                        break;
+                    }
+                }
+                return temp;
+            }
         }
 
         @Override
         public T last() {
-            return null;
+            if (this.size() == 0) throw new NoSuchElementException();
+            if (upperBound == null) return tree.last();
+            else {
+                Iterator<T> it = tree.iterator();
+                T temp;
+                T res = null;
+                while (it.hasNext()) {
+                    temp = it.next();
+                    if (temp.compareTo(upperBound) == 0) break;
+                    res = temp;
+                }
+                return res;
+            }
         }
     }
 }

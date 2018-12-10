@@ -4,11 +4,11 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SplayTreeTest {
-    SplayTree<Integer> tree = new SplayTree<>();
-    SplayTree<Integer> temp = new SplayTree<>();
+class SplayTreeTest {
+    private SplayTree<Integer> tree = new SplayTree<>();
+    private SplayTree<Integer> temp = new SplayTree<>();
 
-    void add() {
+    private void add() {
         tree.add(10);
         tree.add(20);
         tree.add(30);
@@ -18,6 +18,14 @@ public class SplayTreeTest {
         tree.add(70);
         tree.add(80);
         tree.add(90);
+    }
+
+    private void add2() {
+        tree.add(1);
+        tree.add(2);
+        tree.add(3);
+        tree.add(4);
+        tree.add(5);
     }
 
     @Test
@@ -50,6 +58,15 @@ public class SplayTreeTest {
         assertTrue(tree.contains(40));
         tree.remove(30);
         assertFalse(tree.contains(30));
+        tree.clear();
+        add2();
+        assertTrue(tree.contains(1));
+        assertFalse(tree.contains(20));
+        tree.remove(3);
+        tree.remove(5);
+        assertFalse(tree.contains(3));
+        assertTrue(tree.contains(1));
+        assertTrue(tree.contains(2));
     }
 
     @Test
@@ -85,6 +102,7 @@ public class SplayTreeTest {
         assertTrue(set.contains(70));
         assertTrue(set.contains(80));
         assertTrue(set.contains(90));
+        assertFalse(set.contains(10));
     }
 
     @Test
@@ -195,7 +213,7 @@ public class SplayTreeTest {
     void clear() {
         add();
         tree.clear();
-        SplayTree newTree = new SplayTree();
+        SplayTree newTree = new SplayTree<>();
         assertArrayEquals(newTree.toArray(), tree.toArray());
     }
 }
