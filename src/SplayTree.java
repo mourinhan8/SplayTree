@@ -8,9 +8,13 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         root = null;
     }
 
+    SplayNode getRoot() {
+        return root;
+    }
+
     private void makeRightChildParent(SplayNode<T> c, SplayNode<T> p) {
-        if ((c == null) || (p == null) || (p.right != c) || (c.parent != p))
-            throw new RuntimeException("WRONG");
+        /*if ((c == null) || (p == null) || (p.right != c) || (c.parent != p))
+            throw new RuntimeException("WRONG");*/
         if (p.parent != null) {
             if (p == p.parent.left)
                 p.parent.left = c;
@@ -26,9 +30,8 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     }
 
     private void makeLeftChildParent(SplayNode<T> c, SplayNode<T> p) {
-        if ((c == null) || (p == null) || (p.left != c) || (c.parent != p))
-            throw new RuntimeException("WRONG");
-
+        /*if ((c == null) || (p == null) || (p.left != c) || (c.parent != p))
+            throw new RuntimeException("WRONG");*/
         if (p.parent != null) {
             if (p == p.parent.left)
                 p.parent.left = c;
@@ -73,6 +76,34 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             }
         }
         root = x;
+    }
+
+    private SplayNode<T> findClosest(SplayNode<T> start, T value) {
+        if (start == null) return null;
+        int comparison = value.compareTo(start.value);
+        if (comparison == 0) {
+            return start;
+        } else if (comparison < 0) {
+            if (start.left == null) return start;
+            return findClosest(start.left, value);
+        } else {
+            if (start.right == null) return start;
+            return findClosest(start.right, value);
+        }
+    }
+
+    private SplayNode<T> findWithOutSplay(SplayNode<T> start, T value) {
+        if (start == null) return null;
+        int comparison = value.compareTo(start.value);
+        if (comparison == 0) {
+            return start;
+        } else if (comparison < 0) {
+            if (start.left == null) return null;
+            return findWithOutSplay(start.left, value);
+        } else {
+            if (start.right == null) return null;
+            return findWithOutSplay(start.right, value);
+        }
     }
 
     @Override
@@ -155,28 +186,9 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public boolean contains(Object o) {
-        return findNode((T) o) != null;
-    }
-
-    private SplayNode<T> findNode(T element) {
-        SplayNode<T> prevNode = null;
-        SplayNode<T> z = root;
-        while (z != null) {
-            prevNode = z;
-            if (element.compareTo(z.value) > 0)
-                z = z.right;
-            else if (element.compareTo(z.value) < 0)
-                z = z.left;
-            else {
-                Splay(z);
-                return z;
-            }
-        }
-        if (prevNode != null) {
-            Splay(prevNode);
-            return null;
-        }
-        return null;
+        SplayNode<T> node = findClosest(this.root, (T) o);
+        Splay(node);
+        return node.value.compareTo((T) o) == 0;
     }
 
     @Override
@@ -189,7 +201,7 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         Iterator iteratorIt = new SplayTreeIterator();
         Object[] a = new Object[count];
         int i = 0;
-        while (iteratorIt .hasNext()) {
+        while (iteratorIt.hasNext()) {
             a[i] = iteratorIt.next();
             i++;
         }
@@ -211,6 +223,7 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public boolean add(T t) {
+        if (findWithOutSplay(root, t) != null) return false;
         SplayNode<T> z = root;
         SplayNode<T> p = null;
         while (z != null) {
@@ -236,7 +249,7 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
     @Override
     public boolean remove(Object o) {
-        SplayNode node = findNode((T) o);
+        SplayNode node = findWithOutSplay(root, (T) o);
         if (node == null) return false;
         remove(node);
         return true;
@@ -250,11 +263,9 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
             SplayNode min = node.left;
             while (min.right != null)
                 min = min.right;
-
-            min.right = node.right;
-            node.right.parent = min;
-            node.left.parent = null;
             root = node.left;
+            Splay(min);
+            root.right = node.right;
         } else if (node.right != null) {
             node.right.parent = null;
             root = node.right;
@@ -269,6 +280,7 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         node.right = null;
         count--;
     }
+
 
     @Override
     public boolean containsAll(Collection<?> c) {
@@ -304,8 +316,8 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
     @Override
     public boolean removeAll(Collection<?> c) {
         boolean check = false;
-        for (Object o : c){
-            if (this.contains(o)){
+        for (Object o : c) {
+            if (this.contains(o)) {
                 this.remove(o);
                 check = true;
             }
@@ -364,4 +376,6 @@ class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         }
     }
 }
-abstract class SplaySubSet<T extends Comparable<T>> implements SortedSet<T> {}
+
+abstract class SplaySubSet<T extends Comparable<T>> implements SortedSet<T> {
+}
