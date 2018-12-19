@@ -176,6 +176,10 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         return new SplayTreeIterator();
     }
 
+    private Iterator<T> iterator(T fromElement, T toElement) {
+        return new SplayTreeIterator(fromElement, toElement);
+    }
+
     @Override
     public Object[] toArray() {
         Iterator iteratorIt = new SplayTreeIterator();
@@ -317,10 +321,35 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
         private SplayNode<T> current = null;
         private Stack<SplayNode<T>> stack;
         private SplayNode<T> previous = null;
+        private T lowerBound, upperBound;
 
         SplayTreeIterator() {
             stack = new Stack<>();
             pushAll(root);
+        }
+
+        SplayTreeIterator(T lowerBound, T upperBound) {
+            stack = new Stack<>();
+            this.lowerBound = lowerBound;
+            this.upperBound = upperBound;
+            pushAllWithLimits(root);
+        }
+
+        boolean inRange(Object o) {
+            T t = (T) o;
+            if (lowerBound != null && upperBound != null) {
+                return t.compareTo(lowerBound) >= 0 && t.compareTo(upperBound) < 0;
+            } else if (lowerBound == null) {
+                return t.compareTo(upperBound) < 0;
+            } else return t.compareTo(lowerBound) >= 0;
+        }
+
+        private void pushAllWithLimits(SplayNode<T> node) {
+            if (node != null && inRange(node.value)) {
+                stack.push(node);
+                if (node.right != null)
+                    pushAllWithLimits(node.right);
+            }
         }
 
         private void pushAll(SplayNode<T> node) {
@@ -445,7 +474,7 @@ public class SplayTree<T extends Comparable<T>> implements SortedSet<T> {
 
         @Override
         public Iterator<T> iterator() {
-            return null;
+            return tree.iterator(lowerBound, upperBound);
         }
 
         @Override
